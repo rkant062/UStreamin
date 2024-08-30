@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-jobmanager
+  labels:
+    app: flink
+    component: jobmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flink
+      component: jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      containers:
+      - name: jobmanager
+        image: flink:1.13.2
+        ports:
+        - containerPort: 6123  # RPC port
+        - containerPort: 8081  # REST API
+        - containerPort: 6124  # Blob server
+        env:
+        - name: JOB_MANAGER_RPC_ADDRESS
+          value: flink-jobmanager
+        volumeMounts:
+        - name: flink-config-volume
+          mountPath: /opt/flink/conf
+      volumes:
+      - name: flink-config-volume
+        configMap:
+          name: flink-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager
+  labels:
+    app: flink
+    component: jobmanager
+spec:
+  ports:
+  - port: 6123  # RPC port
+    name: rpc
+  - port: 8081  # REST API
+    name: webui
+  - port: 6124  # Blob server
+    name: blob
+  selector:
+    app: flink
+    component: jobmanager

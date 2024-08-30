@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  labels:
+    app: flink
+    component: taskmanager
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+      containers:
+      - name: taskmanager
+        image: flink:1.13.2
+        ports:
+        - containerPort: 6121  # Data port
+        - containerPort: 6122  # TaskManager RPC port
+        env:
+        - name: JOB_MANAGER_RPC_ADDRESS
+          value: flink-jobmanager
+        volumeMounts:
+        - name: flink-config-volume
+          mountPath: /opt/flink/conf
+      volumes:
+      - name: flink-config-volume
+        configMap:
+          name: flink-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-taskmanager
+  labels:
+    app: flink
+    component: taskmanager
+spec:
+  ports:
+  - port: 6121  # Data port
+    name: data
+  - port: 6122  # TaskManager RPC port
+    name: rpc
+  selector:
+    app: flink
+    component: taskmanager
